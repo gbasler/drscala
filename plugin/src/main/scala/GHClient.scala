@@ -10,7 +10,7 @@ import org.kohsuke.github.GHRepository
 class GHClient(credentials: GHClient.Credentials) { import GHClient._
   import GHClient._
 
-  private val client = GitHub.connectUsingPassword(credentials.user, credentials.password)
+  private val client = GitHub.connectToEnterprise("http://git/api/v3", credentials.user, credentials.password)
 
   def report(repositoryId: RepositoryId, pullRequestId: Int): Either[Throwable, Reporter] = allCatch.either {
     val repository = client.getRepository(repositoryId)
