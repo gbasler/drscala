@@ -32,7 +32,8 @@ object build extends Build {
     id = "plugin",
     base = file("plugin"),
     settings = sharedSettings ++ assemblySettings).settings(
-      libraryDependencies ++= Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value,
+      libraryDependencies ++= Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
+        "org.scala-lang" % "scala-library" % scalaVersion.value % "provided",
         "org.kohsuke" % "github-api" % "1.44"),
       artifact in (Compile, assembly) ~= { art =>
         art.copy(`classifier` = Some("assembly"))
