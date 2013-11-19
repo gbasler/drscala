@@ -29,8 +29,9 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
 
           trace(comments.mkString("\n"))
 
-          if (Settings.warn) comments.foreach { case ((line, column), body) => 
-            unit.warning(unit.source.position(line - 1, column - 1), s"$phaseName\n$body")
+          if (Settings.warn) comments.foreach { case ((line, column), body) =>
+            val l = math.max(0, line - 1)
+            unit.warning(unit.source.position(l, column - 1), s"$phaseName\n$body")
           }
 
           writer.foreach(_(comments.map { case ((line, column), body) => (line -> column) -> body }))

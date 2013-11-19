@@ -1,5 +1,7 @@
 import sbt._
 import Keys._
+import sbtassembly.Plugin._
+import AssemblyKeys._
 
 object build extends Build {
   lazy val root = Project(
@@ -14,19 +16,28 @@ object build extends Build {
     organization := "com.github.aloiscochard",
     name := "drscala",
     version := "0.1.0-SNAPSHOT",
-    description := "A doctor for your code"
+    description := "A doctor for your code",
+    publishTo <<= version { (v: String) =>
+      val r = if (v.toString.endsWith("-SNAPSHOT")) {
+        "Nexus Snapshots" at "http://nexus/nexus/content/repositories/snapshots"
+      } else {
+        "Nexus Releases" at "http://nexus/nexus/content/repositories/releases"
+      }
+      Some(r)
+    }
   )
 
   // This subproject contains the Scala compiler plugin
   lazy val plugin = Project(
     id = "plugin",
     base = file("plugin"),
-    settings = sharedSettings ++ Seq[Project.Setting[_]](
+    settings = sharedSettings ++ assemblySettings).settings(
       libraryDependencies ++= Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value,
         "org.kohsuke" % "github-api" % "1.44"),
-      publishArtifact in Compile := false
-    )
-  )
+      artifact in (Compile, assembly) ~= { art =>
+        art.copy(`classifier` = Some("assembly"))
+      }
+  ).settings(addArtifact(artifact in(Compile, assembly), assembly).settings: _*)
 
   // Scalac command line options to install our compiler plugin.
   lazy val usePluginSettings = Seq(

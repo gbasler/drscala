@@ -11,6 +11,10 @@ object Bar {
 
   def NoType = "hello"
 
+//  map(_ == XmlBasketType.WEIGHTED_AVERAGE)
+
+
+  // call skipped in specs2 test
 }
 
 
