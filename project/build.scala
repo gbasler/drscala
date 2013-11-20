@@ -1,7 +1,5 @@
 import sbt._
 import Keys._
-import sbtassembly.Plugin._
-import AssemblyKeys._
 
 object build extends Build {
   lazy val root = Project(
@@ -27,18 +25,18 @@ object build extends Build {
     }
   )
 
+  def GitHubApi = "org.kohsuke" % "github-api" % "1.44"
+
   // This subproject contains the Scala compiler plugin
   lazy val plugin = Project(
     id = "plugin",
     base = file("plugin"),
-    settings = sharedSettings ++ assemblySettings).settings(
+    settings = sharedSettings ++ Seq(
       libraryDependencies ++= Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
         "org.scala-lang" % "scala-library" % scalaVersion.value % "provided",
-        "org.kohsuke" % "github-api" % "1.44"),
-      artifact in (Compile, assembly) ~= { art =>
-        art.copy(`classifier` = Some("assembly"))
-      }
-  ).settings(addArtifact(artifact in(Compile, assembly), assembly).settings: _*)
+        GitHubApi)
+    )
+  )
 
   // Scalac command line options to install our compiler plugin.
   lazy val usePluginSettings = Seq(
@@ -53,14 +51,17 @@ object build extends Build {
         "warn"
       ).map("-P:drscala:" + _)
       Seq(addPlugin, dummy) ++ drscala
-    }
-//    javaOptions in Compile := Seq("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005")
+    },
+    libraryDependencies += GitHubApi % Configurations.ScalaTool
+    //    javaOptions in Compile := Seq("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005")
   )
 
   // A regular module with the application code.
   lazy val main = Project(
     id = "main",
     base = file("main"),
-    settings = sharedSettings ++ usePluginSettings
+    settings = sharedSettings ++ usePluginSettings ++ Seq(
+      publishArtifact in Compile := false
+    )
   )
 }
