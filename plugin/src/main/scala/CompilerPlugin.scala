@@ -134,7 +134,8 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
 
     trace(s"""DrScala (warn=${Settings.warn}, github=${Settings.github}, drscala.pr=${GitHub.pullRequestId}""")
     trace(doctors.map(_.name).mkString(","))
-    trace(s"Scope = ${Settings.github.flatMap(_.reporter).map(_.scope)}")
+    if(Settings.enabled)
+      trace(s"Scope = ${Settings.github.flatMap(_.reporter).map(_.scope)}")
   }
 
   override val optionsHelp: Option[String] = Some("""
