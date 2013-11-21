@@ -62,7 +62,7 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
     }
   }
 
-  val active = ! Settings.disabled
+  val active = Settings.enabled
   val name = "drscala"
   val description = "A doctor for your code"
   val doctors = Seq(new StdLib)
@@ -70,6 +70,8 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
   val components = 
     if (active) new CheckupExamine(doctors) :: List("parser", "typer").map(new CheckupDiagnostic(_, doctors)) else Nil
 
+  println(s"""Active checkups: ${components.mkString(",")}""")
+  
   object Settings {
     class Prefix(value: String) { def unapply(xs: String): Option[String] = if (xs.startsWith(value)) Some(xs.drop(value.size)) else None }
 
@@ -89,8 +91,8 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
           .map(_.toInt)
 
       val env = System.getenv
-      import scala.collection.JavaConversions._
-      for (envName <- env.keySet) {
+      import scala.collection.JavaConverters._
+      for (envName <- env.keySet.asScala) {
         trace(s"$envName = ${env.get(envName)}")
       }
 
@@ -100,11 +102,11 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
 
     var debug = false
 
-    val disabled = Option(System.getProperty("drscala.disable"))
-      .orElse(Option(System.getenv("DRSCALA_DISABLE")))
+    val enabled = Option(System.getProperty("drscala.enable"))
+      .orElse(Option(System.getenv("DRSCALA_ENSABLE")))
       .fold(false)(_.toLowerCase == "true")
 
-    println(s"""DrScala is ${if(disabled) "disabled" else "enabled"}.""")
+    println(s"""DrScala is ${if(enabled) "enabled" else "disabled"}.""")
 
     var github: Option[GitHub] = None
     var warn = false
