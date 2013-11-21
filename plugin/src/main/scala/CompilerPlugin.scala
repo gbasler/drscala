@@ -91,7 +91,7 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
       val env = System.getenv
       import scala.collection.JavaConversions._
       for (envName <- env.keySet) {
-        println(s"$envName = ${env.get(envName)}")
+        trace(s"$envName = ${env.get(envName)}")
       }
 
       val User = new Prefix("gh.user="); val Password = new Prefix("gh.password=")
@@ -103,6 +103,8 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
     val disabled = Option(System.getProperty("drscala.disable"))
       .orElse(Option(System.getenv("DRSCALA_DISABLE")))
       .fold(false)(_.toLowerCase == "true")
+
+    println(s"""DrScala is ${if(disabled) "disabled" else "enabled"}.""")
 
     var github: Option[GitHub] = None
     var warn = false
