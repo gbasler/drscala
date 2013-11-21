@@ -14,7 +14,14 @@ object Bar {
 //  map(_ == XmlBasketType.WEIGHTED_AVERAGE)
 
 
-  // call skipped in specs2 test
+  // if (riskyDiscountCurveName.isDefined) Some(YieldCurveKey(currency, riskyDiscountCurveName)) else None
+
+  // if (factorCorrelationProduct <= Epsilon.Tiny || (abs(sTRho) >= sTToLTFactorWeightRatio * abs(lTRho))) true
+  //   else false
+
+  // require(size == errorWeights.rows,  sys.error(s"Num rows $size in targe")
+
+
 }
 
 

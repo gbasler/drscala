@@ -23,7 +23,7 @@ trait StdLibComponent { self: HealthCake =>
     override val diagnostic: PartialFunction[PhaseId, CompilationUnit => Seq[(Position, Message)]] = {
       case "parser" => _.body.collect {
         case tree@Select(_, name) if name.toString == "asInstanceOf" =>
-          tree -> "There should be a better way than using `asInstanceOf`, what do you think?"
+          tree -> "An `asInstanceOf` could result in a `ClassCastException` at runtime, it's better to use a pattern match."
       }
       case "typer" => _.body.collect {
         case tree if isNothingInferred(tree) =>
@@ -35,18 +35,18 @@ trait StdLibComponent { self: HealthCake =>
             s"Because calling `$name` might throw an exception in this case."
           )
 
-        case tree@Select(value, name) if name.toString == "get" && value.tpe <:< typeOf[Option[Any]] =>
-          tree -> "There is surely a better way than calling `Option.get`, any idea?"
+        case tree@Select(ident, name) if name.toString == "get" && ident.tpe <:< typeOf[Option[Any]] =>
+          tree -> s"""`$ident.get` can result in a `NoSuchElementException`, I recommend to write `$ident.getOrElse(sys.error("..."))`"""
 
         case tree@Select(value@Apply(Select(ident, n1), _), n2)
           if n1.toString == "get" && n2.toString == "getOrElse" && value.tpe <:< typeOf[Option[Any]] =>
-          tree -> s"`$ident.get.getOrElse` are you serious? Try `$ident.getOrElse` instead."
+          tree -> s"""`$ident.get(...).getOrElse(...)` can be simplified to `$ident.getOrElse(...)`."""
 
-        case tree@Select(value, name) if name.toString == "find" && isMap(value.tpe) =>
-          tree -> s"`find` on a `Map`, you are joking???"
+        case tree@Select(ident, name) if name.toString == "find" && isMap(ident.tpe) =>
+          tree -> s"`find` on a `Map` is O(n), you should use `$ident.get` instead."
 
-        case tree@Select(value, name) if name.toString == "find" && isSet(value.tpe) =>
-          tree -> s"`find` on a `Set`, you are joking???"
+        case tree@Select(ident, name) if name.toString == "find" && isSet(ident.tpe) =>
+          tree -> s"`find` on a `Set` is O(n), you should use `$ident.get` instead."
 
 //        case tree@Select(v@Apply(value@Select(ident, n1), a1), n2) if n1.toString == "get" && n2.toString == "getOrElse" =>
 //          println(ident.tpe <:< typeOf[scala.collection.Map[Any, Any]])
@@ -58,18 +58,10 @@ trait StdLibComponent { self: HealthCake =>
     }
 
     override val examine: Seq[(String, Column => Position)] => Seq[(Position, Message)] = xs => {
-      def emptyLines(lines: Seq[(String, Column => Position)]): Seq[(Position, Message)] = {
-        val (count, xs) = lines.foldLeft((0, Seq.empty[Position])) { case ((count, xs), (line, pos)) =>
-          if (line.trim.isEmpty) (count + 1) ->  xs
-          else 0 -> { if (count > 1) (pos(1) +: xs ) else xs }
-        }
-        xs.map { case (line, column) => (line - 1, column) -> "Are these extra empty lines really needed?" }
-      }
-
       xs.collect {
         case (code, pos) if code.trim.endsWith(";") =>
           pos(code.length) -> "That `;` at the end of the line is unnecessary."
-      } ++ emptyLines(xs)
+      }
     }
   }
 }

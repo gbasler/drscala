@@ -88,6 +88,12 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
           .orElse(Option(System.getenv("ghprbPullId")))
           .map(_.toInt)
 
+      val env = System.getenv
+      import scala.collection.JavaConversions._
+      for (envName <- env.keySet) {
+        println(s"$envName = ${env.get(envName)}")
+      }
+
       val User = new Prefix("gh.user="); val Password = new Prefix("gh.password=")
       val RepositoryOwner = new Prefix("gh.repository.owner="); val RepositoryName = new Prefix("gh.repository.name=")
     }
