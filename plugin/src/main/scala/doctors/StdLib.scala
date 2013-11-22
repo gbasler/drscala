@@ -16,9 +16,23 @@ trait StdLibComponent { self: HealthCake =>
       case DefDef(_, _, _, _, tpt, _) if tpt.exists(_.tpe =:= typeOf[Nothing]) => true
     }
 
+    // regular type check would not work because of covariance
     private def isMap(tpe: Type) = tpe.typeSymbol.isNonBottomSubClass(typeOf[Map[Any, Any]].typeSymbol)
 
     private def isSet(tpe: Type) = tpe.typeSymbol.isNonBottomSubClass(typeOf[Set[Any]].typeSymbol)
+
+    private def isArray(tpe: Type) = tpe.typeSymbol.isNonBottomSubClass(typeOf[Array[Any]].typeSymbol)
+
+    object CaseClassArrayMembersExtractor {
+      def unapply(tree: Tree): Option[(TypeName, IndexedSeq[Symbol])] = tree match {
+        case tree@ClassDef(mods, ident, _, _) if (tree.symbol ne null) && tree.symbol.isCaseClass =>
+          val a = tree.symbol.tpe.declarations
+            .filter(m => m.isCaseAccessor && isArray(m.tpe) && m.isParamAccessor && m.isMethod)
+            .toIndexedSeq
+          if (a.isEmpty) None else Some((ident, a))
+        case _ => None
+      }
+    }
 
     override val diagnostic: PartialFunction[PhaseId, CompilationUnit => Seq[(Position, Message)]] = {
       case "parser" => _.body.collect {
@@ -48,12 +62,22 @@ trait StdLibComponent { self: HealthCake =>
         case tree@Select(ident, name) if name.toString == "find" && isSet(ident.tpe) =>
           tree -> s"`find` on a `Set` is O(n), you should use `$ident.get` instead."
 
+        case tree@Select(value, name) if name.toString == "foreach" =>
+          println(tree.tpe <:< typeOf[Range])
+          println(tree.tpe <:< typeOf[scala.collection.immutable.Range])
+          tree -> s"foreach"
+
+        case tree@CaseClassArrayMembersExtractor((ident, members)) =>
+          val names = members.map(_.name)
+          tree -> (s"""`$ident`.{${names.mkString(",")}}: case class with `Array`s in c'tor: """ +
+            s"""structural equality / hashing is not implemented. Use either `mutable.WrappedArray` or `IndexedSeq`.""")
+
 //        case tree@Select(v@Apply(value@Select(ident, n1), a1), n2) if n1.toString == "get" && n2.toString == "getOrElse" =>
 //          println(ident.tpe <:< typeOf[scala.collection.Map[Any, Any]])
 //          println(ident.tpe <:< typeOf[scala.Predef.Map[Any, Any]])
 //          println(show(ident.tpe))
 //          import BooleanFlag._
-//          println(showRaw(ident.tpe, printTypes = true))
+//          println(showRaw(ident.tpe, printTypes = true)))
       }
     }
 
