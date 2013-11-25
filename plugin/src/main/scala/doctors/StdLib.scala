@@ -43,6 +43,7 @@ trait StdLibComponent { self: HealthCake =>
         case tree if isNothingInferred(tree) =>
           tree -> "I feel a disturbance in the force, the type `Nothing` might have been inferred."
 
+          // TODO: remove, it's too noisy
         case tree@Select(value, name) if unsafeOnEmptyIterable.contains(name.toString) && value.tpe <:< typeOf[Iterable[Any]] =>
           tree -> (
             s"Are you sure the `${value.tpe.typeSymbol.name}` will never be empty?\n" +
@@ -63,6 +64,10 @@ trait StdLibComponent { self: HealthCake =>
           tree -> s"`find` on a `Set` is O(n), you should use `$ident.get` instead."
 
         case tree@Select(value, name) if name.toString == "foreach" =>
+          println(tree.tpe)
+          println(tree.tpe.prefix)
+          println(tree.tpe.prefixChain)
+          println(tree.tpe.typeSymbol)
           println(tree.tpe <:< typeOf[Range])
           println(tree.tpe <:< typeOf[scala.collection.immutable.Range])
           tree -> s"foreach"
