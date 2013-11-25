@@ -23,9 +23,15 @@ object Bar {
     println(i)
   }
 
+  val c = if(a.isEmpty) true else false
+
+  val d = if(a.isEmpty) 1 else 2
+
+  // simplifiable operation on collection
+  val y: Option[Int] = Some(1)
+  val x = y.map(c => true).getOrElse(false)
 
 //  map(_ == XmlBasketType.WEIGHTED_AVERAGE)
-
 
   // if (riskyDiscountCurveName.isDefined) Some(YieldCurveKey(currency, riskyDiscountCurveName)) else None
 
