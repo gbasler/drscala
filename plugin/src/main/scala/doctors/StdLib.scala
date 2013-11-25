@@ -3,7 +3,9 @@ package doctors
 
 import scala.tools.nsc.Global
 
-trait StdLibComponent { self: HealthCake =>
+trait StdLibComponent {
+  self: HealthCake =>
+
   import self.global._
 
   class StdLib extends Doctor {
@@ -22,6 +24,16 @@ trait StdLibComponent { self: HealthCake =>
     private def isSet(tpe: Type) = tpe.typeSymbol.isNonBottomSubClass(typeOf[Set[Any]].typeSymbol)
 
     private def isArray(tpe: Type) = tpe.typeSymbol.isNonBottomSubClass(typeOf[Array[Any]].typeSymbol)
+
+    private def briefTree(tree: Tree) = {
+      val t = show(tree)
+      val line = t.indexOf('\n')
+      if (line == -1) {
+        t
+      } else {
+        t.substring(0, line - 1) + " ..."
+      }
+    }
 
     object CaseClassArrayMembersExtractor {
       def unapply(tree: Tree): Option[(TypeName, IndexedSeq[Symbol])] = tree match {
@@ -43,12 +55,12 @@ trait StdLibComponent { self: HealthCake =>
         case tree if isNothingInferred(tree) =>
           tree -> "I feel a disturbance in the force, the type `Nothing` might have been inferred."
 
-          // TODO: remove, it's too noisy
+        // TODO: remove, it's too noisy
         case tree@Select(value, name) if unsafeOnEmptyIterable.contains(name.toString) && value.tpe <:< typeOf[Iterable[Any]] =>
           tree -> (
             s"Are you sure the `${value.tpe.typeSymbol.name}` will never be empty?\n" +
-            s"Because calling `$name` might throw an exception in this case."
-          )
+              s"Because calling `$name` might throw an exception in this case."
+            )
 
         case tree@Select(ident, name) if name.toString == "get" && ident.tpe <:< typeOf[Option[Any]] =>
           tree -> s"""`$ident.get` can result in a `NoSuchElementException`, I recommend to write `$ident.getOrElse(sys.error("..."))`"""
@@ -63,26 +75,32 @@ trait StdLibComponent { self: HealthCake =>
         case tree@Select(ident, name) if name.toString == "find" && isSet(ident.tpe) =>
           tree -> s"`find` on a `Set` is O(n), you should use `$ident.get` instead."
 
-        case tree@Select(value, name) if name.toString == "foreach" =>
-          println(tree.tpe)
-          println(tree.tpe.prefix)
-          println(tree.tpe.prefixChain)
-          println(tree.tpe.typeSymbol)
-          println(tree.tpe <:< typeOf[Range])
-          println(tree.tpe <:< typeOf[scala.collection.immutable.Range])
-          tree -> s"foreach"
-
         case tree@CaseClassArrayMembersExtractor((ident, members)) =>
           val names = members.map(_.name)
-          tree -> (s"""`$ident`.{${names.mkString(",")}}: case class with `Array`s in c'tor: """ +
+          tree -> (s"""`$ident`.{`${names.mkString(",")}`}: case class with `Array`s in c'tor: """ +
             s"""structural equality / hashing is not implemented. Use either `mutable.WrappedArray` or `IndexedSeq`.""")
 
-//        case tree@Select(v@Apply(value@Select(ident, n1), a1), n2) if n1.toString == "get" && n2.toString == "getOrElse" =>
-//          println(ident.tpe <:< typeOf[scala.collection.Map[Any, Any]])
-//          println(ident.tpe <:< typeOf[scala.Predef.Map[Any, Any]])
-//          println(show(ident.tpe))
-//          import BooleanFlag._
-//          println(showRaw(ident.tpe, printTypes = true)))
+        case tree@If(cond, Literal(Constant(true)), Literal(Constant(false))) =>
+          tree -> s"`${briefTree(tree)}` can be simplified to `${briefTree(cond)}`."
+
+        case tree@If(cond, Literal(Constant(false)), Literal(Constant(true))) =>
+          tree -> s"`${briefTree(tree)}` can be simplified to `!${briefTree(cond)}`."
+
+//        case tree@Select(value, name) if name.toString == "foreach" =>
+//          println(tree.tpe)
+//          println(tree.tpe.prefix)
+//          println(tree.tpe.prefixChain)
+//          println(tree.tpe.typeSymbol)
+//          println(tree.tpe <:< typeOf[Range])
+//          println(tree.tpe <:< typeOf[scala.collection.immutable.Range])
+//          tree -> s"foreach"
+
+        //        case tree@Select(v@Apply(value@Select(ident, n1), a1), n2) if n1.toString == "get" && n2.toString == "getOrElse" =>
+        //          println(ident.tpe <:< typeOf[scala.collection.Map[Any, Any]])
+        //          println(ident.tpe <:< typeOf[scala.Predef.Map[Any, Any]])
+        //          println(show(ident.tpe))
+        //          import BooleanFlag._
+        //          println(showRaw(ident.tpe, printTypes = true)))
       }
     }
 
@@ -93,4 +111,5 @@ trait StdLibComponent { self: HealthCake =>
       }
     }
   }
+
 }
