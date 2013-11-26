@@ -51,11 +51,7 @@ trait StdLibComponent {
         case tree@Select(_, name) if name.toString == "asInstanceOf" =>
           tree -> "An `asInstanceOf` could result in a `ClassCastException` at runtime, it's better to use a pattern match."
       }
-      case "typer" =>
-        cu =>
-          println(cu)
-
-          cu.body.collect {
+      case "typer" => _.body.collect {
             case tree if isNothingInferred(tree) =>
               tree -> "I feel a disturbance in the force, the type `Nothing` might have been inferred."
 
@@ -96,7 +92,7 @@ trait StdLibComponent {
 
             case tree@Select(Apply(TypeApply(Select(ident, name1), typeArg :: Nil), arg :: Nil), name2)
               if name1.toString == "map" && name2.toString == "getOrElse" && typeArg.tpe =:= typeOf[Boolean] =>
-              tree -> s"Simplifiable operation on collection: `$ident.exists(${briefTree(arg)}})`"
+              tree -> s"Simplifiable operation on collection, rewrite to: `$ident.exists(${briefTree(arg)}})`"
 
             //        case tree@Select(value, name) if name.toString == "foreach" =>
             //          println(tree.tpe)

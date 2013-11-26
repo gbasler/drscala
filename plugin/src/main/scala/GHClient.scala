@@ -21,6 +21,9 @@ class GHClient(credentials: GHClient.Credentials) { import GHClient._
       commit.getFiles.asScala.flatMap { file =>
         file.getPatch.split("\n").headOption.map(_.split("\\+")(1).split("@@")(0).trim).map { targetHunk =>
           val xs = targetHunk.split(",").map(_.toInt)
+          if (xs.size < 2) {
+            println(s"patch: ${file.getPatch}, $targetHunk")
+          }
           file.getFileName -> (xs(0) -> xs(1))
         }
       }.toSeq match {
