@@ -19,12 +19,15 @@ class GHClient(credentials: GHClient.Credentials) { import GHClient._
 
     val scope = compare.getCommits.map(commit => repository.getCommit(commit.getSHA1)).flatMap { commit =>
       commit.getFiles.asScala.flatMap { file =>
-        file.getPatch.split("\n").headOption.map(_.split("\\+")(1).split("@@")(0).trim).map { targetHunk =>
-          val xs = targetHunk.split(",").map(_.toInt)
-          if (xs.size < 2) {
-            println(s"patch: ${file.getPatch}, $targetHunk")
-          }
-          file.getFileName -> (xs(0) -> xs(1))
+        val tmp = file.getPatch.split("\n").headOption.map(_.split("\\+")(1).split("@@")(0).trim)
+        tmp.flatMap {
+          targetHunk =>
+            val xs = targetHunk.split(",").map(_.toInt)
+            if (xs.size >= 1) {
+              Some(file.getFileName -> (xs(0) -> xs(1)))
+            } else {
+              None
+            }
         }
       }.toSeq match {
         case Nil => None
