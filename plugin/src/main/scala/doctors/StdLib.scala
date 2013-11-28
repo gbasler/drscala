@@ -62,6 +62,7 @@ trait StdLibComponent {
             //              s"Because calling `$name` might throw an exception in this case."
             //            )
 
+              // TODO: rather check for Option.isDefined, Option.get => match...
             case tree@Select(ident, name) if name.toString == "get" && ident.tpe <:< typeOf[Option[Any]] =>
               tree -> s"""`$ident.get` can result in a `NoSuchElementException`, I recommend to write `$ident.getOrElse(sys.error("..."))`"""
 
@@ -94,7 +95,12 @@ trait StdLibComponent {
               if name1.toString == "map" && name2.toString == "getOrElse" && typeArg.tpe =:= typeOf[Boolean] =>
               tree -> s"Simplifiable operation on collection, rewrite to: `$ident.exists(${briefTree(arg)}})`"
 
-            //        case tree@Select(value, name) if name.toString == "foreach" =>
+            case tree@DefDef(Modifiers(0L, tpnme.EMPTY, _), name, tparams, vparamss, tpt: TypeTree, rhs)
+              if !tree.symbol.isConstructor && tree.symbol.isPublic &&
+                tpt.original == null && !(tpt.tpe =:= typeOf[Unit]) =>
+              tree -> s"The `public` method `$name` should have explicit return type, `$tpt` was inferred. Please specify return type."
+
+        //        case tree@Select(value, name) if name.toString == "foreach" =>
             //          println(tree.tpe)
             //          println(tree.tpe.prefix)
             //          println(tree.tpe.prefixChain)
