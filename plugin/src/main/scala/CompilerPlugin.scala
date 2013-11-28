@@ -70,7 +70,7 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
   val components = 
     if (active) new CheckupExamine(doctors) :: List("parser", "typer").map(new CheckupDiagnostic(_, doctors)) else Nil
 
-  println(s"""Active checkups: ${components.mkString(",")}""")
+//  println(s"""Active checkups: ${components.mkString(",")}""")
   
   object Settings {
     class Prefix(value: String) { def unapply(xs: String): Option[String] = if (xs.startsWith(value)) Some(xs.drop(value.size)) else None }
@@ -106,7 +106,7 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
       .orElse(Option(System.getenv("DRSCALA_ENSABLE")))
       .fold(false)(_.toLowerCase == "true")
 
-    println(s"""DrScala is ${if(enabled) "enabled" else "disabled"}.""")
+//    println(s"""DrScala is ${if(enabled) "enabled" else "disabled"}.""")
 
     var github: Option[GitHub] = None
     var warn = false
