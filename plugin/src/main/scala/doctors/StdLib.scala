@@ -46,6 +46,23 @@ trait StdLibComponent {
       }
     }
 
+    object IsDefinedGetExtractor {
+      def unapply(tree: Tree): Option[Set[Tree]] = tree match {
+        case tree@If(cond, thenp, elsep) =>
+          val isDefinedIdentifiers = cond.collect {
+            case tree@Select(ident, name) if name.toString == "isDefined" && ident.tpe <:< typeOf[Option[Any]] => ident
+          }
+
+          val getIdentifiers = cond.collect {
+            case tree@Select(ident, name) if name.toString == "get" && ident.tpe <:< typeOf[Option[Any]] => ident
+          }
+
+          val isDefinedGets = isDefinedIdentifiers.toSet.union(getIdentifiers.toSet)
+          if (isDefinedGets.isEmpty) None else Some(isDefinedGets)
+        case _ => None
+      }
+    }
+
     override val diagnostic: PartialFunction[PhaseId, CompilationUnit => Seq[(Position, Message)]] = {
       case "parser" => _.body.collect {
         case tree@Select(_, name) if name.toString == "asInstanceOf" =>
@@ -54,17 +71,6 @@ trait StdLibComponent {
       case "typer" => _.body.collect {
             case tree if isNothingInferred(tree) =>
               tree -> "I feel a disturbance in the force, the type `Nothing` might have been inferred."
-
-            // TODO: remove, it's too noisy
-            //        case tree@Select(value, name) if unsafeOnEmptyIterable.contains(name.toString) && value.tpe <:< typeOf[Iterable[Any]] =>
-            //          tree -> (
-            //            s"Are you sure the `${value.tpe.typeSymbol.name}` will never be empty?\n" +
-            //              s"Because calling `$name` might throw an exception in this case."
-            //            )
-
-              // TODO: rather check for Option.isDefined, Option.get => match...
-            case tree@Select(ident, name) if name.toString == "get" && ident.tpe <:< typeOf[Option[Any]] =>
-              tree -> s"""`$ident.get` can result in a `NoSuchElementException`, I recommend to write `$ident.getOrElse(sys.error("..."))`"""
 
             case tree@Select(value@Apply(Select(ident, n1), _), n2)
               if n1.toString == "get" && n2.toString == "getOrElse" && value.tpe <:< typeOf[Option[Any]] =>
@@ -99,6 +105,9 @@ trait StdLibComponent {
               if !tree.symbol.isConstructor && tree.symbol.isPublic &&
                 tpt.original == null && !(tpt.tpe =:= typeOf[Unit]) =>
               tree -> s"The `public` method `$name` should have explicit return type, `$tpt` was inferred. Please specify return type."
+
+            case tree@IsDefinedGetExtractor(idents) =>
+              tree -> s"""You can use a patten match `${idents.mkString(",")} match (...)` instead of `isDefined... get`."""
 
         //        case tree@Select(value, name) if name.toString == "foreach" =>
             //          println(tree.tpe)
