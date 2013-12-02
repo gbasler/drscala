@@ -34,9 +34,6 @@ object Bar {
   //    println(i)
   //  }
   //
-  //  val c = if(a.isEmpty) true else false
-  //
-  //  val d = if(a.isEmpty) 1 else 2
 
   // simplifiable operation on collection
 //  val y: Option[Int] = Some(1)
