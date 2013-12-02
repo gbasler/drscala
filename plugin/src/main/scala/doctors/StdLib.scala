@@ -97,6 +97,7 @@ trait StdLibComponent {
             case tree@If(cond, Literal(Constant(false)), Literal(Constant(true))) =>
               tree -> s"`${briefTree(tree)}` can be simplified to `!${briefTree(cond)}`."
 
+            // TODO: complain only for functions that are not already in tpt.tpe.baseType...
             case tree@DefDef(Modifiers(0L, tpnme.EMPTY, _), name, tparams, vparamss, tpt: TypeTree, rhs)
               if !tree.symbol.isConstructor && tree.symbol.isPublic &&
                 tpt.original == null && !(tpt.tpe =:= typeOf[Unit]) =>
