@@ -76,9 +76,9 @@ trait StdLibComponent {
               if n1.toString == "get" && n2.toString == "getOrElse" && value.tpe <:< typeOf[Option[Any]] =>
               tree -> s"""`$ident.get(...).getOrElse(...)` can be simplified to `$ident.getOrElse(...)`."""
 
-            case tree@Select(value@Apply(Select(ident, n1), _), n2)
-              if n1.toString == "map" && n2.toString == "getOrElse" && value.tpe <:< typeOf[Option[Any]] =>
-              tree -> s"""`$ident.get(...).getOrElse(...)` can be simplified to `$ident.getOrElse(...)`."""
+            case tree@Select(Apply(TypeApply(Select(ident, name1), typeArg :: Nil), arg :: Nil), name2)
+              if name1.toString == "map" && name2.toString == "getOrElse" && typeArg.tpe =:= typeOf[Boolean] =>
+              tree -> s"Simplifiable operation on collection, rewrite to: `$ident.exists(${briefTree(arg)}})`"
 
             case tree@Select(ident, name) if name.toString == "find" && isMap(ident.tpe) =>
               tree -> s"`find` on a `Map` is O(n), you should use `$ident.get` instead."
@@ -96,10 +96,6 @@ trait StdLibComponent {
 
             case tree@If(cond, Literal(Constant(false)), Literal(Constant(true))) =>
               tree -> s"`${briefTree(tree)}` can be simplified to `!${briefTree(cond)}`."
-
-            case tree@Select(Apply(TypeApply(Select(ident, name1), typeArg :: Nil), arg :: Nil), name2)
-              if name1.toString == "map" && name2.toString == "getOrElse" && typeArg.tpe =:= typeOf[Boolean] =>
-              tree -> s"Simplifiable operation on collection, rewrite to: `$ident.exists(${briefTree(arg)}})`"
 
             case tree@DefDef(Modifiers(0L, tpnme.EMPTY, _), name, tparams, vparamss, tpt: TypeTree, rhs)
               if !tree.symbol.isConstructor && tree.symbol.isPublic &&
