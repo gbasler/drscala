@@ -103,6 +103,11 @@ trait StdLibComponent {
                 tpt.original == null && !(tpt.tpe =:= typeOf[Unit]) =>
               tree -> s"The `public` method `$name` should have explicit return type, `$tpt` was inferred. Please specify return type."
 
+            case tree@ClassDef(mods, name, tparams, impl) =>
+              tree -> s"class $name: ${tree.tpe.baseClasses}"
+            case tree@ModuleDef(mods, name, impl) =>
+              tree -> s"object $name: ${tree.symbol.baseClasses}"
+
             case tree@IsDefinedGetExtractor(idents) =>
               tree -> s"""You can use a patten match `${idents.mkString(",")} match (...)` instead of `isDefined... get`."""
 

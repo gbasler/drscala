@@ -16,17 +16,6 @@ object Bar {
   //  def listfind[K](o: List[K], k: K) = o.find(_ == k)
   //
 
-  // warn about this
-  def NoType = "hello"
-
-  private def NoTypePriv = "hello"
-  // be ok with that
-  def WithType: String = "hello"
-
-  def onlySideEffect = {
-    println("sideeffect")
-  }
-
   //
   //  // better a.indices
   //  val a = Seq(1, 2, 3)
