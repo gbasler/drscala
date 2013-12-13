@@ -27,6 +27,8 @@ object build extends Build {
 
   def GitHubApi = "org.kohsuke" % "github-api" % "1.44"
 
+  def Config = "com.typesafe" %  "config" % "1.0.2"
+
   // This subproject contains the Scala compiler plugin
   lazy val plugin = Project(
     id = "plugin",
@@ -34,7 +36,7 @@ object build extends Build {
     settings = sharedSettings ++ Seq(
       libraryDependencies ++= Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
         "org.scala-lang" % "scala-library" % scalaVersion.value % "provided",
-        GitHubApi)
+        GitHubApi, Config)
     )
   )
 

@@ -138,23 +138,6 @@ trait StdLibComponent {
             case tree@If(cond, Literal(Constant(false)), Literal(Constant(true))) =>
               tree -> s"`${briefTree(tree)}` can be simplified to `!${briefTree(cond)}`."
 
-            //        case tree@CheckNoReturnType(t, msg) =>
-            //          t -> msg
-
-            // TODO: complain only for functions that are not already in tpt.tpe.baseType...
-            //        case tree@DefDef(Modifiers(0L, tpnme.EMPTY, _), name, tparams, vparamss, tpt: TypeTree, rhs)
-            //          if !tree.symbol.isConstructor && tree.symbol.isPublic &&
-            //            tpt.original == null && !(tpt.tpe =:= typeOf[Unit]) =>
-            //          tree -> s"The `public` method `$name` should have explicit return type, `$tpt` was inferred. Please specify return type."
-
-            //        case tree@ClassDef(mods, name, tparams, impl) =>
-            //          checkNoReturnType(tree, tree.symbol.baseClasses, impl)
-            //          tree -> s"class $name: ${tree.tpe.baseClasses}: ${tree.symbol.baseClasses}"
-            //
-            //        case tree@ModuleDef(mods, name, impl) =>
-            //          checkNoReturnType(tree, tree.symbol.baseClasses, impl)
-            //          tree -> s"object $name: ${tree.tpe.baseClasses}: ${tree.symbol.baseClasses}"
-
             case tree@IsDefinedGetExtractor(idents) =>
               tree -> s"""You can use a patten match `${idents.mkString(",")} match (...)` instead of `isDefined... get`."""
 
