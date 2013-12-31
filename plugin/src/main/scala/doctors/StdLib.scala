@@ -51,14 +51,17 @@ trait StdLibComponent {
     }
 
     object IsDefinedGetExtractor {
+      val Option_isDefined: Symbol = definitions.getMemberMethod(definitions.OptionClass, newTermName("isDefined"))
+      val Option_get: Symbol = definitions.getMemberMethod(definitions.OptionClass, newTermName("get"))
+
       def unapply(tree: Tree): Option[Set[Tree]] = tree match {
         case tree@If(cond, thenp, elsep) =>
           val isDefinedIdentifiers = cond.collect {
-            case tree@Select(ident, name) if name.toString == "isDefined" && ident.tpe <:< typeOf[Option[Any]] => ident
+            case tree@Select(ident, name) if tree.symbol == Option_isDefined => ident
           }
 
           val getIdentifiers = cond.collect {
-            case tree@Select(ident, name) if name.toString == "get" && ident.tpe <:< typeOf[Option[Any]] => ident
+            case tree@Select(ident, name) if tree.symbol == Option_get => ident
           }
 
           val isDefinedGets = isDefinedIdentifiers.toSet.union(getIdentifiers.toSet)
@@ -122,8 +125,14 @@ trait StdLibComponent {
           } else {
             Seq()
           }
+
+          val Set_find: Symbol = definitions.getMemberMethod(typeOf[Set[Any]].typeSymbol, newTermName("find"))
+          val Map_find: Symbol = definitions.getMemberMethod(typeOf[Map[Any, Any]].typeSymbol, newTermName("find"))
+          val Option_map: Symbol = definitions.getMemberMethod(definitions.OptionClass, newTermName("map"))
+          val Option_getOrElse: Symbol = definitions.getMemberMethod(definitions.OptionClass, newTermName("getOrElse"))
+
           val bodyChecks: Seq[(Position, Message)] = u.body.collect {
-            case tree if config.nothingInferred.isWarning && isNothingInferred(tree) =>
+            case tree if config.nothingInferred && isNothingInferred(tree) =>
               tree -> "I feel a disturbance in the force, the type `Nothing` might have been inferred."
 
             case tree@Select(value, name) if config.unsafeOnEmptyIterable &&
@@ -138,15 +147,15 @@ trait StdLibComponent {
                 n1.toString == "get" && n2.toString == "getOrElse" && value.tpe <:< typeOf[Option[Any]] =>
               tree -> s"""`$ident.get(...).getOrElse(...)` can be simplified to `$ident.getOrElse(...)`."""
 
-            case tree@Select(Apply(TypeApply(Select(ident, name1), typeArg :: Nil), arg :: Nil), name2)
+            case tree@Select(Apply(TypeApply(innerTree@Select(ident, name1), typeArg :: Nil), arg :: Nil), name2)
               if config.mapGetOrElse &&
-                name1.toString == "map" && name2.toString == "getOrElse" && typeArg.tpe =:= typeOf[Boolean] =>
+                innerTree.symbol == Option_map && tree.symbol == Option_getOrElse && typeArg.tpe =:= typeOf[Boolean] =>
               tree -> s"Simplifiable operation on collection, rewrite to: `$ident.exists(${briefTree(arg)}})`"
 
-            case tree@Select(ident, name) if config.findOnSet && name.toString == "find" && isSet(ident.tpe) =>
+            case tree@Select(ident, name) if config.findOnSet && tree.symbol == Set_find =>
               tree -> s"`find` on a `Set` is O(n), you should use `$ident.get` instead."
 
-            case tree@Select(ident, name) if config.findOnMap && name.toString == "find" && isMap(ident.tpe) =>
+            case tree@Select(ident, name) if config.findOnMap && tree.symbol == Map_find =>
               tree -> s"`find` on a `Map` is O(n), you should use `$ident.get` instead."
 
             case tree@CaseClassArrayMembersExtractor((ident, members)) if config.caseClassWithArray =>

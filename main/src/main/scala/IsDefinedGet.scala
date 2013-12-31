@@ -8,4 +8,15 @@ object IsDefinedGet {
 
   // alright... we don't want false positives...
   val a = o.get
+
+  // should ignore similar constructs without Option
+  abstract class Oops {
+     def isDefined: Boolean = false
+     def get: Int = 0
+  }
+
+  var falseFriend: Oops = _
+  if(falseFriend.isDefined && mean) {
+    val v = falseFriend.get
+  }
 }
