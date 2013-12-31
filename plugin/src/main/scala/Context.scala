@@ -64,6 +64,7 @@ class Context(config: Config) {
   val unsafeOnEmptyIterable: ConfigType = config.getString(prefix + ".unsafe-on-empty-iterable")
   val println: ConfigType = config.getString(prefix + ".println")
   val missingImplementation: ConfigType = config.getString(prefix + ".missing-implementation")
+  val checkNoReturnType: ConfigType = config.getString(prefix + ".check-no-return-type")
 
   override def toString: String = {
     val configs: Seq[(String, ConfigType)] = Seq(
@@ -78,7 +79,8 @@ class Context(config: Config) {
       "map(...).getOrElse" -> mapGetOrElse,
       "unsafe on empty iterable" -> unsafeOnEmptyIterable,
       "println" -> println,
-      "missing implementation" -> missingImplementation
+      "missing implementation" -> missingImplementation,
+      "check no return type" -> checkNoReturnType
     )
     val ordered = configs.sortBy(_._1)
     val longest = configs.map(_._1.length).max

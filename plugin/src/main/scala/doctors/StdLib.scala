@@ -120,7 +120,11 @@ trait StdLibComponent {
       }
       case "typer" =>
         u =>
-          val classChecks: Seq[(Position, Message)] = checkNoReturnType(u.body)
+          val classChecks: Seq[(Position, Message)] = if (config.checkNoReturnType) {
+            checkNoReturnType(u.body)
+          } else {
+            Seq()
+          }
           val bodyChecks: Seq[(Position, Message)] = u.body.collect {
             case tree if config.nothingInferred.isWarning && isNothingInferred(tree) =>
               tree -> "I feel a disturbance in the force, the type `Nothing` might have been inferred."
