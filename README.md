@@ -1,6 +1,6 @@
 # DrScala
 
-You need to review code on Github? You keep making the same comments over and over?
+You need to review code on Github? Tired of giving the same comments again and again?
 
 DrScala takes care of your reviews and checks basic flaws of style and correctness.
 It's main purpose is educational, it is not a code checker nor a bug finder.
@@ -22,7 +22,8 @@ It's main purpose is educational, it is not a code checker nor a bug finder.
       "gh.repository.name=drscala"
     ).map("-P:drscala:" + _)
 
-    libraryDependencies += "org.kohsuke" % "github-api" % "1.44" % Configurations.ScalaTool
+    libraryDependencies += Seq("org.kohsuke" % "github-api" % "1.44" % Configurations.ScalaTool,
+    "com.typesafe" %  "config" % "1.0.2" % Configurations.ScalaTool)
 
 ## Checks
 
@@ -37,7 +38,7 @@ it needs to infer all types for tab-competion.
 
 #### Case classes must not have Arrays as constructor arguments
 
-* structural equality / hashing does not work since. Arrays do not implement these methods.
+* structural equality / hashing does not work since Arrays do not implement these methods.
 
 #### `Option.get`
 

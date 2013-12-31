@@ -54,7 +54,7 @@ object build extends Build {
       ).map("-P:drscala:" + _)
       Seq(addPlugin, dummy) ++ drscala
     },
-    libraryDependencies += GitHubApi % Configurations.ScalaTool
+    libraryDependencies ++= Seq(GitHubApi % Configurations.ScalaTool, Config % Configurations.ScalaTool)
     //    javaOptions in Compile := Seq("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005")
   )
 

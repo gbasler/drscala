@@ -84,11 +84,11 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
     }
 
     object GitHub { 
-      def pullRequestId = 
-        Option(System.getProperty("drscala.pr"))
-          .orElse(Option(System.getenv("DRSCALA_PR")))
-          .orElse(Option(System.getenv("ghprbPullId")))
-          .map(_.toInt)
+      def pullRequestId: Option[Int] = Some(123)
+//        Option(System.getProperty("drscala.pr"))
+//          .orElse(Option(System.getenv("DRSCALA_PR")))
+//          .orElse(Option(System.getenv("ghprbPullId")))
+//          .map(_.toInt)
 
 //      val env = System.getenv
 //      import scala.collection.JavaConverters._
@@ -128,9 +128,9 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
       case option => error("Option not understood: " + option)
     }
 
-    Settings.github = 
-      for { u <- user; p <- password; ro <- repositoryOwner; rn <- repositoryName }
-      yield Settings.GitHub(Credentials(u, p), RepositoryId(ro, rn))
+    Settings.github = Some(Settings.GitHub(Credentials("u", "p"), RepositoryId("ro", "rn")))
+//      for { u <- user; p <- password; ro <- repositoryOwner; rn <- repositoryName }
+//      yield Settings.GitHub(Credentials(u, p), RepositoryId(ro, rn))
 
     trace(s"""DrScala (warn=${Settings.warn}, github=${Settings.github}, drscala.pr=${GitHub.pullRequestId}""")
     trace(doctors.map(_.name).mkString(","))
