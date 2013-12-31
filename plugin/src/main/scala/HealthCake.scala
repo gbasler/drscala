@@ -15,6 +15,9 @@ trait HealthCake {
   type Position = (Line, Column)
   type Message = String
 
+  val config = new Context()
+//  println(config)
+
   abstract class Doctor {
 
     protected implicit def t2p(tuple: (Tree, Message)) = { val (tree, body) = tuple; (tree.pos.line, tree.pos.column) -> body }

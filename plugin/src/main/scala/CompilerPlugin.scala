@@ -29,8 +29,9 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
 
           trace(comments.mkString("\n"))
 
-          if (Settings.warn) comments.foreach { case ((line, column), body) => 
-            unit.warning(unit.source.position(line - 1, column - 1), s"$phaseName\n$body")
+          if (Settings.warn) comments.foreach { case ((line, column), body) =>
+            val l = math.max(0, line - 1)
+            unit.warning(unit.source.position(l, column - 1), s"$phaseName\n$body")
           }
 
           writer.foreach(_(comments.map { case ((line, column), body) => (line -> column) -> body }))
@@ -61,7 +62,7 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
     }
   }
 
-  val active = ! Settings.disabled
+  val active = Settings.enabled
   val name = "drscala"
   val description = "A doctor for your code"
   val doctors = Seq(new StdLib)
@@ -69,6 +70,8 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
   val components = 
     if (active) new CheckupExamine(doctors) :: List("parser", "typer").map(new CheckupDiagnostic(_, doctors)) else Nil
 
+//  println(s"""Active checkups: ${components.mkString(",")}""")
+  
   object Settings {
     class Prefix(value: String) { def unapply(xs: String): Option[String] = if (xs.startsWith(value)) Some(xs.drop(value.size)) else None }
 
@@ -81,7 +84,7 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
     }
 
     object GitHub { 
-      def pullRequestId = 
+      def pullRequestId =
         Option(System.getProperty("drscala.pr"))
           .orElse(Option(System.getenv("DRSCALA_PR")))
           .orElse(Option(System.getenv("ghprbPullId")))
@@ -93,8 +96,8 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
 
     var debug = false
 
-    val disabled = Option(System.getProperty("drscala.disable"))
-      .orElse(Option(System.getenv("DRSCALA_DISABLE")))
+    val enabled = Option(System.getProperty("drscala.enable"))
+      .orElse(Option(System.getenv("DRSCALA_ENSABLE")))
       .fold(false)(_.toLowerCase == "true")
 
     var github: Option[GitHub] = None
@@ -117,13 +120,14 @@ class CompilerPlugin(val global: Global) extends Plugin with HealthCake
       case option => error("Option not understood: " + option)
     }
 
-    Settings.github = 
+    Settings.github =
       for { u <- user; p <- password; ro <- repositoryOwner; rn <- repositoryName }
-      yield Settings.GitHub(Credentials(u, p), RepositoryId(ro, rn))
+      yield Settings.GitHub(Credentials(config.isEnterprise, u, p), RepositoryId(ro, rn))
 
     trace(s"""DrScala (warn=${Settings.warn}, github=${Settings.github}, drscala.pr=${GitHub.pullRequestId}""")
     trace(doctors.map(_.name).mkString(","))
-    trace(s"Scope = ${Settings.github.flatMap(_.reporter).map(_.scope)}")
+    if(Settings.enabled)
+      trace(s"Scope = ${Settings.github.flatMap(_.reporter).map(_.scope)}")
   }
 
   override val optionsHelp: Option[String] = Some("""
