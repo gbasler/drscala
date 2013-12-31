@@ -12,6 +12,8 @@ trait StdLibComponent {
 
   val config = new Context()
   println(config)
+  
+  implicit private def isWarning(config: ConfigType): Boolean = config.isWarning
 
   class StdLib extends Doctor {
     def name = "std-lib"
@@ -114,7 +116,7 @@ trait StdLibComponent {
         u =>
           val classChecks: Seq[(Position, Message)] = checkNoReturnType(u.body)
           val bodyChecks: Seq[(Position, Message)] = u.body.collect {
-            case tree if isNothingInferred(tree) =>
+            case tree if config.nothingInferred.isWarning && isNothingInferred(tree) =>
               tree -> "I feel a disturbance in the force, the type `Nothing` might have been inferred."
 
             case tree@Select(value@Apply(Select(ident, n1), _), n2)
@@ -125,34 +127,26 @@ trait StdLibComponent {
               if name1.toString == "map" && name2.toString == "getOrElse" && typeArg.tpe =:= typeOf[Boolean] =>
               tree -> s"Simplifiable operation on collection, rewrite to: `$ident.exists(${briefTree(arg)}})`"
 
-            case tree@Select(ident, name) if name.toString == "find" && isMap(ident.tpe) =>
-              tree -> s"`find` on a `Map` is O(n), you should use `$ident.get` instead."
-
-            case tree@Select(ident, name) if name.toString == "find" && isSet(ident.tpe) =>
+            case tree@Select(ident, name) if config.findOnSet && name.toString == "find" && isSet(ident.tpe) =>
               tree -> s"`find` on a `Set` is O(n), you should use `$ident.get` instead."
 
-            case tree@CaseClassArrayMembersExtractor((ident, members)) =>
+            case tree@Select(ident, name) if config.findOnMap && name.toString == "find" && isMap(ident.tpe) =>
+              tree -> s"`find` on a `Map` is O(n), you should use `$ident.get` instead."
+
+            case tree@CaseClassArrayMembersExtractor((ident, members)) if config.caseClassWithArray =>
               val names = members.map(_.name)
               tree -> (s"""`$ident`.{`${names.mkString(",")}`}: case class with `Array`s in c'tor: """ +
                 s"""structural equality / hashing is not implemented. Use either `mutable.WrappedArray` or `IndexedSeq`.""")
 
-            case tree@If(cond, Literal(Constant(true)), Literal(Constant(false))) =>
+            case tree@If(cond, Literal(Constant(true)), Literal(Constant(false))) if config.simplifyIf =>
               tree -> s"`${briefTree(tree)}` can be simplified to `${briefTree(cond)}`."
 
-            case tree@If(cond, Literal(Constant(false)), Literal(Constant(true))) =>
+            case tree@If(cond, Literal(Constant(false)), Literal(Constant(true))) if config.simplifyIf =>
               tree -> s"`${briefTree(tree)}` can be simplified to `!${briefTree(cond)}`."
 
-            case tree@IsDefinedGetExtractor(idents) =>
+            case tree@IsDefinedGetExtractor(idents) if config.isDefinedGet =>
               tree -> s"""You can use a patten match `${idents.mkString(",")} match (...)` instead of `isDefined... get`."""
 
-            //        case tree@Select(value, name) if name.toString == "foreach" =>
-            //          println(tree.tpe)
-            //          println(tree.tpe.prefix)
-            //          println(tree.tpe.prefixChain)
-            //          println(tree.tpe.typeSymbol)
-            //          println(tree.tpe <:< typeOf[Range])
-            //          println(tree.tpe <:< typeOf[scala.collection.immutable.Range])
-            //          tree -> s"foreach"
           }
           classChecks ++ bodyChecks
     }

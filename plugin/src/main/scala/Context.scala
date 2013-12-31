@@ -2,8 +2,14 @@ package drscala
 package doctors
 
 import com.typesafe.config.{ConfigFactory, Config}
+import drscala.doctors.ConfigType.{Warn, Ignore}
 
-sealed abstract class ConfigType
+sealed abstract class ConfigType {
+  def isWarning: Boolean = this match {
+    case Warn => true
+    case _ => false
+  }
+}
 
 object ConfigType {
 
@@ -48,11 +54,19 @@ class Context(config: Config) {
 
   val simplifyIf: ConfigType = config.getString(prefix + ".simplify-if")
   val nothingInferred: ConfigType = config.getString(prefix + ".nothing-inferred")
+  val isDefinedGet: ConfigType = config.getString(prefix + ".is-defined-get")
+  val caseClassWithArray: ConfigType = config.getString(prefix + ".case-class-with-array")
+  val findOnSet: ConfigType = config.getString(prefix + ".find-on-set")
+  val findOnMap: ConfigType = config.getString(prefix + ".find-on-map")
 
   override def toString: String = {
     val configs: Seq[(String, ConfigType)] = Seq(
       "simplify if" -> simplifyIf,
-      "nothing inferred" -> nothingInferred
+      "nothing inferred" -> nothingInferred,
+      "is defined get" -> isDefinedGet,
+      "case class with array" -> caseClassWithArray,
+      "find on set" -> findOnSet,
+      "find on map" -> findOnMap
     )
     val ordered = configs.sortBy(_._1)
     val longest = configs.map(_._1.length).max
