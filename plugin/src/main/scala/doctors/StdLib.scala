@@ -10,38 +10,8 @@ trait StdLibComponent {
 
   import self.global._
 
-  try {
-    debugClassloaders
-    val config = new Context()
-    println("config.simplifyIf " + config.simplifyIf)
-  } catch {
-    case e =>
-      e.printStackTrace()
-  }
-
-  /**
-   * @return the URL classpath entries of all UrlClassLoaders in the classloader
-   *         hierarchy starting at `classLoader`.
-   */
-  def classPathOf(classLoader: ClassLoader): List[URL] = {
-    def parents(loader: ClassLoader): Stream[ClassLoader] = if (loader == null)
-      Stream.empty
-    else
-      loader #:: parents(loader.getParent)
-
-    val urls = parents(classLoader).flatMap {
-      case x: URLClassLoader => x.getURLs
-      case _                 => Seq()
-    }
-    urls.toList
-  }
-
-  def debugClassloaders() {
-    // Some residual debugging code after:
-    // https://groups.google.com/d/msg/simple-build-tool/vakvP-hQmOo/WWHjSnfvoZ0J
-    val loader: ClassLoader = Thread.currentThread().getContextClassLoader()//this.getClass.getClassLoader
-    println(s"""getClassLoader: $loader\n${classPathOf(loader).mkString("\n")}""")
-  }
+  val config = new Context()
+  println(config)
 
   class StdLib extends Doctor {
     def name = "std-lib"

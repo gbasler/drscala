@@ -13,43 +13,54 @@ object ConfigType {
 
   val allTypes = Set(Ignore, Warn)
 
-  val fromString: Map[String, ConfigType] = allTypes.map(c => c.getClass.getSimpleName -> c).toMap
+  val fromString: Map[String, ConfigType] = allTypes.map(c => c.toString.toLowerCase -> c).toMap
 
+}
+
+private object ClassLoaderWorkaround {
+  // don't use Thread.currentThread().getContextClassLoader()
+  // since this classloader does not contain the plugin jar
+  val classLoader = classOf[Context].getClassLoader
 }
 
 // we have a constructor allowing the app to provide a custom Config
 class Context(config: Config) {
 
-  implicit def configFromString(configType: String) = ConfigType.fromString.get(configType).getOrElse(
-    sys.error(s"Invalid config type [$configType].")
+  implicit def configFromString(configType: String) = ConfigType.fromString.get(configType.toLowerCase).getOrElse(
+    sys.error( s"""Invalid config type [$configType]. Allowed types are ${ConfigType.fromString.keys.mkString(",")}.""")
   )
 
+  private val prefix = "drscala"
+
+
   // This verifies that the Config is sane and has our
-  // reference config. Importantly, we specify the "simple-lib"
+  // reference config. Importantly, we specify the prefix
   // path so we only validate settings that belong to this
   // library. Otherwise, we might throw mistaken errors about
   // settings we know nothing about.
-  private val prefix = "drscala"
-
-  config.checkValid(ConfigFactory.defaultReference(), prefix)
+  config.checkValid(ConfigFactory.defaultReference(ClassLoaderWorkaround.classLoader), prefix)
 
   // This uses the standard default Config, if none is provided,
   // which simplifies apps willing to use the defaults
   def this() {
-    // don't use Thread.currentThread().getContextClassLoader()
-    // since this classloader does not contain the plugin jar
-    this(ConfigFactory.load(classOf[Context].getClassLoader))
+    this(ConfigFactory.load(ClassLoaderWorkaround.classLoader))
   }
 
-  val classloader = this.getClass.getClassLoader
-  //Thread.currentThread().getContextClassLoader()
-  val is = classloader.getResourceAsStream("reference.conf")
-  val c = scala.io.Source.fromInputStream(is).getLines().mkString
-  println(c)
-
-  println(config)
-
   val simplifyIf: ConfigType = config.getString(prefix + ".simplify-if")
+  val nothingInferred: ConfigType = config.getString(prefix + ".nothing-inferred")
 
-
+  override def toString: String = {
+    val configs: Seq[(String, ConfigType)] = Seq(
+      "simplify if" -> simplifyIf,
+      "nothing inferred" -> nothingInferred
+    )
+    val ordered = configs.sortBy(_._1)
+    val longest = configs.map(_._1.length).max
+    val content = for {
+      (key, value) <- ordered
+    } yield {
+      s"""$key${" " * (longest - key.length)}: $value"""
+    }
+    s"""[Context]\n${content.mkString("\n")}"""
+  }
 }
