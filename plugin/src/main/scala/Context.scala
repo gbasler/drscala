@@ -54,19 +54,25 @@ class Context(config: Config) {
 
   val simplifyIf: ConfigType = config.getString(prefix + ".simplify-if")
   val nothingInferred: ConfigType = config.getString(prefix + ".nothing-inferred")
-  val isDefinedGet: ConfigType = config.getString(prefix + ".is-defined-get")
+  val isDefinedGet: ConfigType = config.getString(prefix + ".isDefined-get")
   val caseClassWithArray: ConfigType = config.getString(prefix + ".case-class-with-array")
   val findOnSet: ConfigType = config.getString(prefix + ".find-on-set")
   val findOnMap: ConfigType = config.getString(prefix + ".find-on-map")
+  val azInstanceOf: ConfigType = config.getString(prefix + ".asInstanceOf")
+  val getGetOrElse: ConfigType = config.getString(prefix + ".get-getOrElse")
+  val mapGetOrElse: ConfigType = config.getString(prefix + ".map-getOrElse")
 
   override def toString: String = {
     val configs: Seq[(String, ConfigType)] = Seq(
       "simplify if" -> simplifyIf,
       "nothing inferred" -> nothingInferred,
-      "is defined get" -> isDefinedGet,
+      "isDefined get" -> isDefinedGet,
       "case class with array" -> caseClassWithArray,
       "find on set" -> findOnSet,
-      "find on map" -> findOnMap
+      "find on map" -> findOnMap,
+      "asInstanceOf" -> azInstanceOf,
+      "get(...).getOrElse" -> getGetOrElse,
+      "map(...).getOrElse" -> mapGetOrElse
     )
     val ordered = configs.sortBy(_._1)
     val longest = configs.map(_._1.length).max

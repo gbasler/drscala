@@ -109,7 +109,7 @@ trait StdLibComponent {
 
     override val diagnostic: PartialFunction[PhaseId, CompilationUnit => Seq[(Position, Message)]] = {
       case "parser" => _.body.collect {
-        case tree@Select(_, name) if name.toString == "asInstanceOf" =>
+        case tree@Select(_, name) if name.toString == "asInstanceOf" && config.azInstanceOf =>
           tree -> "An `asInstanceOf` could result in a `ClassCastException` at runtime, it's better to use a pattern match."
       }
       case "typer" =>
@@ -120,11 +120,13 @@ trait StdLibComponent {
               tree -> "I feel a disturbance in the force, the type `Nothing` might have been inferred."
 
             case tree@Select(value@Apply(Select(ident, n1), _), n2)
-              if n1.toString == "get" && n2.toString == "getOrElse" && value.tpe <:< typeOf[Option[Any]] =>
+              if config.getGetOrElse &&
+                n1.toString == "get" && n2.toString == "getOrElse" && value.tpe <:< typeOf[Option[Any]] =>
               tree -> s"""`$ident.get(...).getOrElse(...)` can be simplified to `$ident.getOrElse(...)`."""
 
             case tree@Select(Apply(TypeApply(Select(ident, name1), typeArg :: Nil), arg :: Nil), name2)
-              if name1.toString == "map" && name2.toString == "getOrElse" && typeArg.tpe =:= typeOf[Boolean] =>
+              if config.mapGetOrElse &&
+                name1.toString == "map" && name2.toString == "getOrElse" && typeArg.tpe =:= typeOf[Boolean] =>
               tree -> s"Simplifiable operation on collection, rewrite to: `$ident.exists(${briefTree(arg)}})`"
 
             case tree@Select(ident, name) if config.findOnSet && name.toString == "find" && isSet(ident.tpe) =>
