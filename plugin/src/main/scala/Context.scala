@@ -61,6 +61,9 @@ class Context(config: Config) {
   val azInstanceOf: ConfigType = config.getString(prefix + ".asInstanceOf")
   val getGetOrElse: ConfigType = config.getString(prefix + ".get-getOrElse")
   val mapGetOrElse: ConfigType = config.getString(prefix + ".map-getOrElse")
+  val unsafeOnEmptyIterable: ConfigType = config.getString(prefix + ".unsafe-on-empty-iterable")
+  val println: ConfigType = config.getString(prefix + ".println")
+  val missingImplementation: ConfigType = config.getString(prefix + ".missing-implementation")
 
   override def toString: String = {
     val configs: Seq[(String, ConfigType)] = Seq(
@@ -72,7 +75,10 @@ class Context(config: Config) {
       "find on map" -> findOnMap,
       "asInstanceOf" -> azInstanceOf,
       "get(...).getOrElse" -> getGetOrElse,
-      "map(...).getOrElse" -> mapGetOrElse
+      "map(...).getOrElse" -> mapGetOrElse,
+      "unsafe on empty iterable" -> unsafeOnEmptyIterable,
+      "println" -> println,
+      "missing implementation" -> missingImplementation
     )
     val ordered = configs.sortBy(_._1)
     val longest = configs.map(_._1.length).max

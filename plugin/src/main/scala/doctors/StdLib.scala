@@ -109,6 +109,12 @@ trait StdLibComponent {
 
     override val diagnostic: PartialFunction[PhaseId, CompilationUnit => Seq[(Position, Message)]] = {
       case "parser" => _.body.collect {
+        case tree@Ident(name) if name.toString == "$qmark$qmark$qmark" && config.missingImplementation =>
+          tree -> "Oops, an implementation is missing here."
+
+        case tree@Apply(Ident(name), _) if name.toString == "println" && config.println =>
+          tree -> "There is rarely a good reason to use `println`, is it the case here?"
+
         case tree@Select(_, name) if name.toString == "asInstanceOf" && config.azInstanceOf =>
           tree -> "An `asInstanceOf` could result in a `ClassCastException` at runtime, it's better to use a pattern match."
       }
@@ -118,6 +124,13 @@ trait StdLibComponent {
           val bodyChecks: Seq[(Position, Message)] = u.body.collect {
             case tree if config.nothingInferred.isWarning && isNothingInferred(tree) =>
               tree -> "I feel a disturbance in the force, the type `Nothing` might have been inferred."
+
+            case tree@Select(value, name) if config.unsafeOnEmptyIterable &&
+            unsafeOnEmptyIterable.contains(name.toString) && value.tpe <:< typeOf[Iterable[Any]] =>
+              tree -> (
+                s"Are you sure the `${value.tpe.typeSymbol.name}` will never be empty?\n" +
+                s"Because calling `$name` might throw an exception in this case."
+              )
 
             case tree@Select(value@Apply(Select(ident, n1), _), n2)
               if config.getGetOrElse &&
