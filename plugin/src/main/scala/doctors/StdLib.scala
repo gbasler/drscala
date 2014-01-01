@@ -72,25 +72,16 @@ trait StdLibComponent {
 
     private def checkNoReturnType(tree: Tree): Seq[((Line, Column), Message)] = {
 
-      def overridden(name: Name, baseClasses: List[Symbol], vparamss: List[List[ValDef]]): Boolean = {
-        baseClasses.exists {
-          symbol: Symbol =>
-            symbol.tpe.members.exists {
-              s: Symbol =>
-                s.name == name && s.tpe.paramss == vparamss
-            }
-        }
-      }
-
       def check(baseClasses: List[Symbol], impl: Template): Seq[(Position, String)] = {
         impl.body.collect {
           case tree@DefDef(Modifiers(0L, tpnme.EMPTY, _), name, tparams, vparamss, tpt: TypeTree, rhs)
             if !tree.symbol.isConstructor && tree.symbol.isPublic &&
               tpt.original == null &&
               !(tpt.tpe =:= typeOf[Unit]) &&
-                overridden(name, baseClasses, vparamss) =>
+                tree.symbol.allOverriddenSymbols.isEmpty =>
 
-            (tree.pos.line, tree.pos.column) -> s"The `public` method `$name` should have explicit return type, `$tpt` was inferred. Please specify return type."
+            (tree.pos.line, tree.pos.column) ->
+              s"The `public` method `$name` should have explicit return type, `$tpt` was inferred. Please specify return type."
         }
       }
 
